@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-void text-parchment;
+    font-family: 'Space Mono', monospace;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 9998;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(10,7,3,0.4) 100%);
+    pointer-events: none;
+    z-index: 9997;
+  }
+  ::selection {
+    background: rgba(233,163,25,0.3);
+    color: #F5E6C8;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #1A0E05; }
+  ::-webkit-scrollbar-thumb { background: #3D2410; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2D6A4F; }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-loam/60 backdrop-blur-md border border-bark rounded-lg;
+  }
+  .glass-input {
+    @apply bg-amber-500/5 border border-bark rounded-md px-4 py-3 text-parchment placeholder-clay/50 focus:border-amber focus:ring-2 focus:ring-amber/20 outline-none transition-all;
+  }
+  .text-gradient-amber {
+    @apply bg-gradient-to-r from-amber to-wheat bg-clip-text text-transparent;
+  }
+}
