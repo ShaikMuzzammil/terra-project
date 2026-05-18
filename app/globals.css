@@ -4,46 +4,65 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    @apply bg-void text-parchment;
-    font-family: 'Space Mono', monospace;
-  }
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.04;
-    pointer-events: none;
-    z-index: 9998;
-  }
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(ellipse at center, transparent 60%, rgba(10,7,3,0.4) 100%);
-    pointer-events: none;
-    z-index: 9997;
-  }
-  ::selection {
-    background: rgba(233,163,25,0.3);
-    color: #F5E6C8;
-  }
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: #1A0E05; }
-  ::-webkit-scrollbar-thumb { background: #3D2410; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #2D6A4F; }
+body {
+  background-color: #0A0703;
+  color: #F5E6C8;
+  font-family: 'Space Mono', monospace;
 }
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 9998;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(10,7,3,0.4) 100%);
+  pointer-events: none;
+  z-index: 9997;
+}
+
+::selection {
+  background: rgba(233,163,25,0.3);
+  color: #F5E6C8;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #1A0E05; }
+::-webkit-scrollbar-thumb { background: #3D2410; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2D6A4F; }
 
 @layer components {
   .glass-card {
-    @apply bg-loam/60 backdrop-blur-md border border-bark rounded-lg;
+    background-color: rgba(44,26,10,0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid #3D2410;
+    border-radius: 0.5rem;
   }
   .glass-input {
-    @apply bg-amber-500/5 border border-bark rounded-md px-4 py-3 text-parchment placeholder-clay/50 focus:border-amber focus:ring-2 focus:ring-amber/20 outline-none transition-all;
+    background-color: rgba(233,163,25,0.05);
+    border: 1px solid #3D2410;
+    border-radius: 0.375rem;
+    padding: 0.75rem 1rem;
+    color: #F5E6C8;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .glass-input:focus {
+    border-color: #E9A319;
+    box-shadow: 0 0 0 2px rgba(233,163,25,0.2);
   }
   .text-gradient-amber {
-    @apply bg-gradient-to-r from-amber to-wheat bg-clip-text text-transparent;
+    background: linear-gradient(to right, #E9A319, #F4D03F);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
