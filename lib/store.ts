@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export interface Plot {
   id: string; name: string; crop: string; size: number;
@@ -50,7 +49,6 @@ const defaultPlots: Plot[] = [
 ];
 
 export const useFarmStore = create<FarmStore>()(
-  persist(
     (set) => ({
       plots: defaultPlots,
       alerts: [
