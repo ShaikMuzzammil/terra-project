@@ -94,6 +94,4 @@ export const useFarmStore = create<FarmStore>()(
       addActivity: (activity) => set((state) => ({ activities: [activity, ...state.activities] })),
       addPriceAlert: (alert) => set((state) => ({ priceAlerts: [...state.priceAlerts, alert] })),
       removePriceAlert: (id) => set((state) => ({ priceAlerts: state.priceAlerts.filter((a) => a.id !== id) })),
-    })
-  )
-);
+    }));
