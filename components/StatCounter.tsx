@@ -1,40 +1,44 @@
 "use client";
-
 import { useEffect, useRef, useState } from "react";
-import { useInView } from "framer-motion";
 
-interface StatCounterProps {
-  end: number;
-  prefix?: string;
-  suffix?: string;
-  duration?: number;
-  decimals?: number;
-  label: string;
-}
+interface Props { end: number; prefix?: string; suffix?: string; decimals?: number; label: string; }
 
-export default function StatCounter({ end, prefix = "", suffix = "", duration = 2000, decimals = 0, label }: StatCounterProps) {
+export default function StatCounter({ end, prefix="", suffix="", decimals=0, label }: Props) {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true });
+  const started = useRef(false);
 
   useEffect(() => {
-    if (!isInView) return;
-    let startTime: number;
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      setCount(Math.floor(progress * end));
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [isInView, end, duration]);
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true;
+        const duration = 2000;
+        const steps = 60;
+        const step = end / steps;
+        let current = 0;
+        const timer = setInterval(() => {
+          current = Math.min(current + step, end);
+          setCount(current);
+          if (current >= end) clearInterval(timer);
+        }, duration / steps);
+      }
+    }, { threshold: 0.3 });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [end]);
+
+  const fmt = (n: number) => {
+    if (n >= 1_000_000) return (n/1_000_000).toFixed(decimals ? decimals : 1)+"M";
+    if (n >= 1_000) return (n/1_000).toFixed(decimals ? decimals : 0)+"K";
+    return n.toFixed(decimals);
+  };
 
   return (
-    <div ref={ref} className="text-center">
-      <div className="font-accent text-4xl md:text-5xl text-amber mb-1">
-        {prefix}{count.toLocaleString("en-IN")}{suffix}
+    <div ref={ref} className="text-center px-4">
+      <div className="font-accent text-3xl md:text-4xl text-amber mb-1 text-glow-amber">
+        {prefix}{fmt(count)}{suffix}
       </div>
-      <div className="font-data text-[10px] tracking-[0.2em] text-clay uppercase">{label}</div>
+      <div className="font-data text-[10px] text-clay tracking-[0.2em] uppercase">{label}</div>
     </div>
   );
 }

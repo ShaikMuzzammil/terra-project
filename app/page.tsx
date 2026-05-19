@@ -2,290 +2,471 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { ChevronDown, ArrowRight, TrendingUp, Sprout, Droplets, Sun, Bug, BarChart3, CloudRain, Tractor } from "lucide-react";
-import LeafParticles from "@/components/LeafParticles";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { ChevronDown, ArrowRight, TrendingUp, Sprout, Droplets, Sun, Bug, BarChart3, CloudRain, Tractor, Zap, Shield, Globe, CheckCircle2, Star } from "lucide-react";
+import PriceTicker from "@/components/PriceTicker";
 import StatCounter from "@/components/StatCounter";
 import GreenCard from "@/components/GreenCard";
-import PriceTicker from "@/components/PriceTicker";
+import { getLivePrices, CROPS } from "@/lib/utils";
 
 const features = [
-  { icon: Droplets, title: "SOIL INTELLIGENCE", description: "Live NPK + moisture across all plots", size: "large", color: "from-moss/20 to-transparent" },
-  { icon: Sun, title: "7-DAY FORECAST", description: "Hyper-local farm weather predictions", size: "small", color: "from-amber/20 to-transparent" },
-  { icon: Bug, title: "PEST DETECTION", description: "AI-assisted early warning system", size: "small", color: "from-rust/20 to-transparent" },
-  { icon: TrendingUp, title: "LIVE MARKET PRICES", description: "MSP + mandi rates updated every hour", size: "small", color: "from-amber/20 to-transparent" },
-  { icon: Sprout, title: "GROWTH TRACKER", description: "Stage-by-stage lifecycle monitoring", size: "small", color: "from-fern/20 to-transparent" },
-  { icon: BarChart3, title: "YIELD ANALYTICS", description: "Forecast vs actual harvest comparison", size: "large", color: "from-leaf/20 to-transparent" },
+  { icon:Droplets,   title:"SOIL INTELLIGENCE",   desc:"Live NPK + moisture across all plots. Automated irrigation triggers.", tag:"Real-time", size:"large", color:"from-[#2D6A4F20]" },
+  { icon:Sun,        title:"7-DAY FORECAST",       desc:"Hyper-local farm weather predictions with rainfall probability.",          tag:"AI Powered", size:"small", color:"from-[#E9A31920]" },
+  { icon:Bug,        title:"PEST DETECTION",       desc:"AI-assisted early warning system. Identifies 40+ common pests.",          tag:"ML Model",   size:"small", color:"from-[#C0392B20]" },
+  { icon:TrendingUp, title:"LIVE MARKET PRICES",   desc:"MSP + mandi rates updated every hour across 600 mandis.",                tag:"Live",       size:"small", color:"from-[#E9A31920]" },
+  { icon:Sprout,     title:"GROWTH TRACKER",       desc:"Stage-by-stage lifecycle monitoring with yield predictions.",             tag:"Smart",      size:"small", color:"from-[#52B78820]" },
+  { icon:BarChart3,  title:"YIELD ANALYTICS",      desc:"Forecast vs actual harvest comparison with 94% accuracy.",                tag:"Analytics",  size:"large", color:"from-[#95D5B220]" },
 ];
 
 const testimonials = [
-  { quote: "TERRA helped me increase my wheat yield by 23% in one season. The soil alerts saved my crop during the dry spell.", name: "Ramesh Kumar", location: "Maharashtra", crop: "Wheat Farmer" },
-  { quote: "I no longer guess when to irrigate. The moisture gauges tell me exactly when each plot needs water.", name: "Lakshmi Devi", location: "Telangana", crop: "Rice Farmer" },
-  { quote: "The market price alerts helped me sell my soybean at the perfect time. Earned ₹18,000 more than last season.", name: "Harpreet Singh", location: "Punjab", crop: "Soybean Farmer" },
+  { quote:"TERRA helped me increase my wheat yield by 23% in one season. The soil alerts saved my crop during the dry spell.", name:"Ramesh Kumar",   location:"Maharashtra",     crop:"Wheat Farmer",    rating:5, img:"RK" },
+  { quote:"I no longer guess when to irrigate. The moisture gauges tell me exactly when each plot needs water.",               name:"Lakshmi Devi",   location:"Telangana",       crop:"Rice Farmer",     rating:5, img:"LD" },
+  { quote:"The market price alerts helped me sell soybean at the perfect time. Earned ₹18,000 more than last season.",         name:"Harpreet Singh", location:"Punjab",           crop:"Soybean Farmer",  rating:5, img:"HS" },
 ];
 
 const seasonCrops = [
-  { name: "Rice", type: "Kharif", start: 5, end: 10, color: "bg-amber" },
-  { name: "Cotton", type: "Kharif", start: 5, end: 11, color: "bg-amber" },
-  { name: "Soybean", type: "Kharif", start: 6, end: 10, color: "bg-amber" },
-  { name: "Wheat", type: "Rabi", start: 10, end: 3, color: "bg-leaf" },
-  { name: "Barley", type: "Rabi", start: 10, end: 3, color: "bg-leaf" },
-  { name: "Mustard", type: "Rabi", start: 10, end: 2, color: "bg-leaf" },
-  { name: "Watermelon", type: "Zaid", start: 2, end: 5, color: "bg-wheat" },
-  { name: "Cucumber", type: "Zaid", start: 2, end: 5, color: "bg-wheat" },
+  { name:"Rice",       type:"Kharif", start:5,  end:10, color:"#E9A319" },
+  { name:"Cotton",     type:"Kharif", start:5,  end:11, color:"#E9A319" },
+  { name:"Soybean",    type:"Kharif", start:6,  end:10, color:"#F4D03F" },
+  { name:"Wheat",      type:"Rabi",   start:10, end:3,  color:"#52B788" },
+  { name:"Barley",     type:"Rabi",   start:10, end:3,  color:"#52B788" },
+  { name:"Mustard",    type:"Rabi",   start:10, end:2,  color:"#95D5B2" },
+  { name:"Watermelon", type:"Zaid",   start:2,  end:5,  color:"#8B5E3C" },
+  { name:"Cucumber",   type:"Zaid",   start:2,  end:5,  color:"#8B5E3C" },
+];
+
+const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+const steps = [
+  { n:"01", title:"CONNECT YOUR FARM",      desc:"Add your plots, crops, and sensor readings. No hardware required — start manually, scale to IoT.", icon:Tractor },
+  { n:"02", title:"MONITOR IN REAL-TIME",   desc:"Weather, soil, pest alerts — all live on one screen. Get notified before problems become disasters.", icon:CloudRain },
+  { n:"03", title:"MAXIMIZE YOUR YIELD",    desc:"Data-driven decisions from planting to sale. Know exactly when to irrigate, fertilize, and harvest.", icon:Sprout },
 ];
 
 export default function LandingPage() {
-  const [weather, setWeather] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [prices, setPrices] = useState<Record<string,any>>({});
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
   const heroRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
+  const { scrollYProgress } = useScroll({ target:heroRef, offset:["start start","end start"] });
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 80]);
 
   useEffect(() => {
-    fetch("/api/weather?type=current").then((r) => r.json()).then((data) => { setWeather(data); setLoading(false); }).catch(() => setLoading(false));
+    setPrices(getLivePrices());
+    const tick = setInterval(() => { setPrices(getLivePrices()); setCurrentTime(new Date()); }, 60000);
+    const clock = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => { clearInterval(tick); clearInterval(clock); };
   }, []);
 
+  useEffect(() => {
+    const iv = setInterval(() => setActiveTestimonial(p => (p+1)%testimonials.length), 5000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const cropBarWidth = (start: number, end: number) => {
+    const len = end >= start ? end - start + 1 : (12 - start + 1) + end;
+    return (len/12)*100;
+  };
+  const cropBarLeft = (start: number) => ((start-1)/12)*100;
+
   return (
-    <div className="relative overflow-hidden">
-      <LeafParticles />
-      <motion.section ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }} className="relative min-h-screen flex items-center justify-center pt-16">
+    <div className="relative">
+      {/* HERO */}
+      <motion.section id="hero" ref={heroRef} style={{ opacity:heroOpacity, y:heroY }}
+        className="relative min-h-screen flex items-center justify-center pt-24 overflow-hidden">
+
+        {/* Background art */}
         <div className="absolute inset-0 overflow-hidden">
-          <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 800 500">
-            {Array.from({ length: 40 }, (_, i) => {
-              const row = Math.floor(i / 8), col = i % 8, x = col * 100 + 10, y = row * 100 + 10, delay = row * 200;
+          {/* Animated field grid */}
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <radialGradient id="fieldGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#2D6A4F" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#2D6A4F" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+            {/* Crop field squares */}
+            {Array.from({length:32}, (_,i) => {
+              const row = Math.floor(i/8), col = i%8;
+              const x = col*150+10, y = row*170+10;
+              const colors = ["#2D6A4F","#3D7A5F","#1A4A35","#4D8A6F"];
+              const c = colors[i%4];
               return (
-                <motion.rect key={i} x={x} y={y} width="80" height="80" rx="4" fill="#2C1A0A" stroke="#3D2410" strokeWidth="2"
-                  initial={{ opacity: 0, scale: 0.1 }} animate={{ opacity: 0.8, scale: 1 }} transition={{ delay: delay / 1000, duration: 0.6, type: "spring" }}>
-                  <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite" />
+                <motion.rect key={i} x={x} y={y} width={130} height={150} rx={6}
+                  fill={c} fillOpacity={0.08} stroke={c} strokeOpacity={0.15} strokeWidth={1}
+                  initial={{opacity:0,scale:0.8}} animate={{opacity:1,scale:1}}
+                  transition={{delay:i*0.03, duration:0.8, type:"spring"}}>
+                  <animate attributeName="fill-opacity" values="0.06;0.12;0.06" dur={`${3+i*0.2}s`} repeatCount="indefinite" />
                 </motion.rect>
               );
             })}
-            {Array.from({ length: 40 }, (_, i) => {
-              const row = Math.floor(i / 8), col = i % 8, x = col * 100 + 50, y = row * 100 + 50, delay = row * 200 + 300;
-              const colors = ["#95D5B2", "#E9A319", "#F5E6C8", "#F4D03F"];
+            {/* Crop dots */}
+            {Array.from({length:32}, (_,i) => {
+              const row=Math.floor(i/8), col=i%8;
+              const cx=col*150+75, cy=row*170+85;
+              const cs=["#95D5B2","#E9A319","#F5E6C8","#52B788","#F4D03F"];
               return (
-                <motion.circle key={`crop-${i}`} cx={x} cy={y} r="0" fill={colors[i % 4]}
-                  initial={{ r: 0 }} animate={{ r: 25 }} transition={{ delay: delay / 1000, duration: 0.8, type: "spring" }} />
+                <motion.circle key={`d${i}`} cx={cx} cy={cy} r={0} fill={cs[i%5]} fillOpacity={0.5}
+                  initial={{r:0}} animate={{r:20}} transition={{delay:0.5+i*0.03, duration:0.8, type:"spring"}} />
               );
             })}
+            <rect x="0" y="0" width="1200" height="700" fill="url(#fieldGlow)" />
           </svg>
-          <div className="absolute inset-0 bg-gradient-to-t from-void via-transparent to-transparent" />
+          {/* Gradient overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-void via-void/70 to-void/20" />
+          <div className="absolute inset-0 bg-gradient-to-r from-void/60 via-transparent to-void/60" />
         </div>
 
+        {/* Hero content */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-moss/20 border border-moss/50 mb-8">
-            <span className="w-2 h-2 rounded-full bg-leaf animate-pulse" />
-            <span className="font-data text-[11px] tracking-[0.2em] text-fern uppercase">TERRA v1.0 // SEASON: KHARIF 2026</span>
+          {/* Badge */}
+          <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.2}}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-moss/15 border border-moss/40 mb-10 backdrop-blur-sm">
+            <span className="status-dot" />
+            <span className="font-data text-[11px] tracking-[0.25em] text-fern uppercase">TERRA v2.0 // KHARIF SEASON 2026</span>
           </motion.div>
 
-          <div className="space-y-2 mb-6">
-            <motion.h1 initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.8 }}
-              className="font-display text-5xl md:text-7xl lg:text-8xl font-bold text-parchment">INTELLIGENT</motion.h1>
-            <motion.h1 initial={{ x: 100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.8, delay: 0.15 }}
-              className="font-display text-5xl md:text-7xl lg:text-8xl font-bold text-amber" style={{ textShadow: "0 4px 30px rgba(45,106,79,0.5)" }}>FARMING</motion.h1>
-            <motion.h1 initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, delay: 0.3 }}
-              className="font-display text-5xl md:text-7xl lg:text-8xl font-bold text-parchment">STARTS HERE</motion.h1>
+          {/* Headline */}
+          <div className="mb-6 overflow-hidden">
+            {["INTELLIGENT","FARMING","STARTS HERE"].map((word,i) => (
+              <motion.h1 key={word}
+                initial={{y:80,opacity:0}} animate={{y:0,opacity:1}}
+                transition={{delay:0.3+i*0.15, duration:0.8, type:"spring", damping:20}}
+                className={`block font-display font-bold leading-none ${i===1?"text-amber text-glow-amber":"text-parchment"}`}
+                style={{fontSize:"clamp(48px,8vw,100px)"}}>
+                {word}
+              </motion.h1>
+            ))}
           </div>
 
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-            className="font-data text-sm md:text-base text-clay max-w-2xl mx-auto mb-8">
-            Real-time soil intelligence. Predictive weather. Live market prices.<br className="hidden md:block" />
-            From Soil to Sale. Every Seed. Every Season. Every Decision.
+          <motion.p initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.8}}
+            className="font-data text-sm md:text-base text-clay max-w-xl mx-auto mb-8 leading-relaxed">
+            Real-time soil intelligence · Predictive weather · Live mandi prices<br />
+            <span className="text-parchment/60">From Soil to Sale — Every Seed, Every Season, Every Decision.</span>
           </motion.p>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
-            className="inline-flex items-center gap-4 px-6 py-3 rounded-full glass-card mb-10">
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 border-2 border-amber border-t-transparent rounded-full animate-spin" />
-                <span className="font-data text-sm text-clay">Loading weather...</span>
-              </div>
-            ) : weather ? (
-              <>
-                <img src={`https://openweathermap.org/img/wn/${weather.weather?.[0]?.icon}@2x.png`} alt="weather" className="w-10 h-10" />
-                <div className="text-left">
-                  <div className="font-accent text-2xl text-amber">{Math.round(weather.main?.temp)}°C</div>
-                  <div className="font-data text-[10px] text-clay uppercase">{weather.weather?.[0]?.description} • FARM WEATHER</div>
-                </div>
-              </>
-            ) : (
-              <span className="font-data text-sm text-clay">Weather data unavailable</span>
-            )}
+          {/* Live time display */}
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:1.0}}
+            className="inline-flex items-center gap-4 px-6 py-3 rounded-xl glass-card mb-10 border-moss/20">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-fern animate-pulse" />
+              <span className="font-data text-xs text-clay">LIVE</span>
+            </div>
+            <div className="w-px h-6 bg-bark" />
+            <div className="font-data text-sm text-parchment tabular-nums">
+              {currentTime.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", second:"2-digit" })}
+            </div>
+            <div className="w-px h-6 bg-bark" />
+            <div className="font-data text-xs text-clay">
+              {currentTime.toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" })}
+            </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/dashboard" className="group flex items-center gap-2 px-8 py-4 bg-moss hover:bg-fern text-parchment rounded-md font-display text-sm tracking-[0.15em] transition-all hover:scale-105">
-              ENTER FARM COMMAND<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          {/* CTAs */}
+          <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:1.1}}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/dashboard"
+              className="group relative flex items-center gap-3 px-8 py-4 bg-moss hover:bg-fern text-parchment rounded-xl font-display text-sm tracking-[0.12em] transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-moss/30 overflow-hidden">
+              <span className="relative z-10 flex items-center gap-2">ENTER FARM COMMAND <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-fern/20 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
-            <Link href="/market" className="flex items-center gap-2 px-8 py-4 border border-moss text-fern hover:bg-moss hover:text-parchment rounded-md font-display text-sm tracking-[0.15em] transition-all">
-              <TrendingUp className="w-4 h-4" />LIVE MARKET
+            <Link href="/market"
+              className="flex items-center gap-2 px-8 py-4 border border-moss/50 hover:border-amber text-fern hover:text-amber rounded-xl font-display text-sm tracking-[0.12em] transition-all duration-300 backdrop-blur-sm">
+              <TrendingUp className="w-4 h-4" /> LIVE MARKET PRICES
             </Link>
           </motion.div>
         </div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2, repeat: Infinity, repeatType: "reverse", duration: 1.5 }}
+        {/* Scroll indicator */}
+        <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:1.5}}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-          <span className="font-data text-[10px] tracking-widest text-clay">SCROLL TO EXPLORE</span>
-          <ChevronDown className="w-5 h-5 text-clay animate-bounce" />
+          <span className="font-data text-[10px] tracking-[0.25em] text-clay uppercase">Scroll to Explore</span>
+          <ChevronDown className="w-4 h-4 text-clay animate-bounce" />
         </motion.div>
       </motion.section>
 
-      <section className="relative z-10 bg-[#1A1000] border-y border-bark py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-bark/50">
-            <StatCounter end={24000000} prefix="₹" label="REVENUE TRACKED" />
-            <StatCounter end={12} label="DISTRICTS" />
-            <StatCounter end={99.2} suffix="%" decimals={1} label="FORECAST ACCURACY" />
-            <StatCounter end={47} label="COMMODITIES MONITORED" />
+      {/* STATS BAR */}
+      <section className="relative z-10 bg-loam/60 border-y border-bark/50 py-10">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-x divide-bark/30">
+            <StatCounter end={24000000} prefix="₹" label="Revenue Tracked" />
+            <StatCounter end={12}       label="Districts Active" />
+            <StatCounter end={99.2}     suffix="%" decimals={1} label="Forecast Accuracy" />
+            <StatCounter end={47}       label="Commodities Monitored" />
           </div>
         </div>
       </section>
 
-      <section className="relative z-10 py-24 px-4">
+      {/* PRICE TICKER */}
+      <PriceTicker />
+
+      {/* FEATURES BENTO GRID */}
+      <section id="features" className="relative z-10 py-28 px-4">
         <div className="max-w-7xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
-            <h2 className="font-display text-3xl md:text-5xl text-parchment mb-4">Platform Intelligence</h2>
-            <p className="font-data text-clay">Every tool you need, unified in one command center</p>
+          <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true}}
+            className="mb-16">
+            <div className="section-line" />
+            <h2 className="font-display text-4xl md:text-6xl text-parchment mb-4 leading-none">Platform<br /><span className="text-amber">Intelligence</span></h2>
+            <p className="font-data text-sm text-clay max-w-md">Every tool you need, unified in one command center. No subscriptions. No hardware required.</p>
           </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 auto-rows-[200px]">
-            {features.map((feature, i) => (
-              <motion.div key={feature.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className={i === 0 || i === 5 ? "md:col-span-2 md:row-span-2" : ""}>
-                <GreenCard className={`h-full bg-gradient-to-br ${feature.color} flex flex-col justify-between group`}>
-                  <div>
-                    <div className="w-12 h-12 rounded-lg bg-void/50 flex items-center justify-center mb-4 group-hover:bg-moss/20 transition-colors">
-                      <feature.icon className="w-6 h-6 text-amber" />
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4" style={{gridAutoRows:"minmax(180px,auto)"}}>
+            {features.map((f, i) => {
+              const Icon = f.icon;
+              const isLarge = i === 0 || i === 5;
+              return (
+                <motion.div key={f.title} initial={{opacity:0,y:30}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*0.08}}
+                  className={isLarge ? "md:col-span-2 md:row-span-2" : ""}>
+                  <GreenCard className={`h-full bg-gradient-to-br ${f.color} to-transparent flex flex-col justify-between group cursor-pointer`}>
+                    <div>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="w-11 h-11 rounded-xl bg-void/60 flex items-center justify-center group-hover:bg-moss/20 transition-colors border border-bark/40">
+                          <Icon className="w-5 h-5 text-amber" />
+                        </div>
+                        <span className="font-data text-[10px] tracking-widest text-clay border border-bark/60 px-2 py-1 rounded-full">{f.tag}</span>
+                      </div>
+                      <h3 className={`font-display text-parchment mb-2 ${isLarge ? "text-2xl" : "text-lg"}`}>{f.title}</h3>
+                      <p className="font-data text-xs text-clay leading-relaxed">{f.desc}</p>
                     </div>
-                    <h3 className="font-display text-xl md:text-2xl text-parchment mb-2">{feature.title}</h3>
-                    <p className="font-data text-sm text-clay">{feature.description}</p>
+                    <div className="mt-4 flex items-center gap-1 text-amber font-data text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Link href={i<2?"/dashboard":i<4?"/market":"/field-monitor"}>Explore feature</Link>
+                      <ArrowRight className="w-3 h-3" />
+                    </div>
+                  </GreenCard>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how-it-works" className="relative z-10 py-28 px-4 bg-loam/20">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}} className="text-center mb-20">
+            <div className="section-line mx-auto" />
+            <h2 className="font-display text-4xl md:text-5xl text-parchment mb-4">How TERRA Works</h2>
+            <p className="font-data text-sm text-clay">Three steps to data-driven farming</p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8 relative">
+            {steps.map((s, i) => (
+              <motion.div key={s.n} initial={{opacity:0,y:30}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*0.2}}
+                className="relative text-center">
+                {i < 2 && (
+                  <div className="hidden md:block absolute top-12 left-[65%] w-[70%] overflow-hidden">
+                    <motion.div initial={{width:0}} whileInView={{width:"100%"}} viewport={{once:true}} transition={{delay:0.5+i*0.3, duration:0.8}}
+                      className="h-px bg-gradient-to-r from-moss to-transparent" />
                   </div>
-                  <div className="mt-4">
-                    <Link href={feature.title.includes("SOIL") ? "/field-monitor" : feature.title.includes("FORECAST") ? "/weather" : feature.title.includes("PEST") ? "/field-monitor" : feature.title.includes("MARKET") ? "/market" : feature.title.includes("GROWTH") ? "/field-monitor" : "/dashboard"}
-                      className="inline-flex items-center gap-1 text-amber font-data text-sm hover:underline">Explore <ArrowRight className="w-3 h-3" /></Link>
+                )}
+                <div className="relative inline-flex items-center justify-center w-24 h-24 mb-6">
+                  <div className="absolute inset-0 rounded-full border-2 border-moss/40 animate-pulse-glow" />
+                  <div className="absolute inset-2 rounded-full bg-void/80 border border-bark flex items-center justify-center">
+                    <span className="font-accent text-3xl text-amber">{s.n}</span>
+                  </div>
+                </div>
+                <div className="w-14 h-14 rounded-xl bg-moss/10 border border-moss/20 flex items-center justify-center mx-auto mb-5">
+                  <s.icon className="w-7 h-7 text-fern" />
+                </div>
+                <h3 className="font-display text-lg text-parchment mb-3">{s.title}</h3>
+                <p className="font-data text-xs text-clay leading-relaxed">{s.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* LIVE PRICES PREVIEW */}
+      <section id="market-preview" className="relative z-10 py-28 px-4">
+        <div className="max-w-7xl mx-auto">
+          <motion.div initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}} className="flex flex-col md:flex-row items-start md:items-end justify-between mb-12 gap-6">
+            <div>
+              <div className="section-line" />
+              <h2 className="font-display text-4xl md:text-5xl text-parchment mb-3">Live Market <span className="text-amber">Rates</span></h2>
+              <p className="font-data text-xs text-clay">MSP + mandi rates updated every 60 seconds</p>
+            </div>
+            <Link href="/market" className="flex items-center gap-2 font-data text-xs text-fern hover:text-amber transition-colors">
+              Full market analysis <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {Object.entries(CROPS).slice(0,8).map(([key, data], i) => {
+              const p = prices[key];
+              const isUp = (p?.change || 0) >= 0;
+              return (
+                <motion.div key={key} initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*0.06}}>
+                  <GreenCard className="p-4 cursor-pointer hover:border-amber/50 transition-all" hover>
+                    <div className="flex justify-between items-start mb-3">
+                      <span className="text-2xl">{data.emoji}</span>
+                      <span className={`font-data text-[10px] px-1.5 py-0.5 rounded ${isUp ? "bg-fern/10 text-fern" : "bg-rust/10 text-rust"}`}>
+                        {isUp?"▲":"▼"} {Math.abs(p?.changePercent||0).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="font-display text-sm text-parchment uppercase mb-1">{key}</div>
+                    <div className="font-accent text-2xl text-amber">₹{(p?.current||data.base).toLocaleString("en-IN")}</div>
+                    {data.msp > 0 && (
+                      <div className="font-data text-[10px] text-clay mt-1">MSP ₹{data.msp.toLocaleString("en-IN")}</div>
+                    )}
+                  </GreenCard>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* CROP CALENDAR */}
+      <section className="relative z-10 py-24 px-4 bg-loam/20">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}} className="text-center mb-12">
+            <h2 className="font-display text-4xl text-parchment mb-3">Crop Calendar 2026</h2>
+            <p className="font-data text-xs text-clay">Indian agricultural seasons at a glance</p>
+          </motion.div>
+          <GreenCard className="overflow-x-auto" hover={false}>
+            <div className="min-w-[700px]">
+              {/* Month headers */}
+              <div className="grid grid-cols-12 gap-1 mb-4">
+                {months.map(m => (
+                  <div key={m} className="text-center font-data text-[10px] text-clay py-2 border-b border-bark/30">{m}</div>
+                ))}
+              </div>
+              <div className="space-y-3">
+                {seasonCrops.map((crop, ci) => (
+                  <motion.div key={crop.name} initial={{opacity:0,x:-20}} whileInView={{opacity:1,x:0}} viewport={{once:true}} transition={{delay:ci*0.08}}
+                    className="grid grid-cols-12 gap-1 items-center group">
+                    <div className="col-span-1" />
+                    <div className="absolute -translate-x-20 font-data text-xs text-parchment w-16 text-right hidden" />
+                    <div className="col-span-12 relative h-8 rounded overflow-hidden bg-void/40">
+                      <div className="absolute left-0 top-0 bottom-0 flex items-center pl-3 z-10">
+                        <span className="font-data text-[10px] text-parchment/60 group-hover:text-parchment transition-colors">{crop.name}</span>
+                      </div>
+                      <motion.div initial={{width:0}} whileInView={{width:`${cropBarWidth(crop.start,crop.end)}%`}} viewport={{once:true}} transition={{duration:1, delay:0.3+ci*0.06}}
+                        className="absolute top-1 bottom-1 rounded-sm opacity-70 group-hover:opacity-90 transition-opacity flex items-center justify-end pr-2"
+                        style={{ left:`${cropBarLeft(crop.start)}%`, background:`${crop.color}55`, border:`1px solid ${crop.color}60` }}>
+                        <span className="font-data text-[9px] opacity-0 group-hover:opacity-100 transition-opacity" style={{color:crop.color}}>
+                          {crop.type} • {months[crop.start-1]}–{months[(crop.end-1+12)%12]}
+                        </span>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="flex items-center gap-6 mt-6 justify-center">
+                {[{c:"#E9A319",l:"Kharif (Jun–Nov)"},{c:"#52B788",l:"Rabi (Nov–Apr)"},{c:"#8B5E3C",l:"Zaid (Mar–Jun)"}].map(x => (
+                  <span key={x.l} className="flex items-center gap-2 font-data text-[10px] text-clay">
+                    <span className="w-3 h-3 rounded" style={{background:x.c}} /> {x.l}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </GreenCard>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section id="testimonials" className="relative z-10 py-28 px-4">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}} className="text-center mb-16">
+            <div className="section-line mx-auto" />
+            <h2 className="font-display text-4xl md:text-5xl text-parchment mb-3">Farmer Stories</h2>
+            <p className="font-data text-xs text-clay">Real results from real farmers across India</p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {testimonials.map((t, i) => (
+              <motion.div key={i} initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*0.12}}>
+                <GreenCard className={`p-8 border-l-4 transition-all duration-300 ${activeTestimonial===i ? "border-l-amber shadow-lg shadow-amber/10" : "border-l-bark hover:border-l-moss"}`}>
+                  <div className="flex gap-1 mb-4">
+                    {[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5 fill-amber text-amber" />)}
+                  </div>
+                  <p className="font-display text-base text-parchment/90 italic mb-6 leading-relaxed">"{t.quote}"</p>
+                  <div className="flex items-center gap-3 border-t border-bark/40 pt-4">
+                    <div className="w-10 h-10 rounded-full bg-moss/20 border border-moss/40 flex items-center justify-center font-display text-sm text-amber">{t.img}</div>
+                    <div>
+                      <p className="font-data text-xs text-parchment font-bold">{t.name}</p>
+                      <p className="font-data text-[10px] text-clay">{t.location} · {t.crop}</p>
+                    </div>
                   </div>
                 </GreenCard>
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
 
-      <section className="relative z-10 py-24 px-4 bg-soil/50">
-        <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
-            <h2 className="font-display text-3xl md:text-5xl text-parchment mb-4">How TERRA Works</h2>
-            <p className="font-data text-clay">Three steps to data-driven farming</p>
-          </motion.div>
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            {[
-              { step: "01", title: "CONNECT YOUR FARM", desc: "Add your plots, crops, and sensor data. No hardware required — start with manual entry or connect IoT sensors.", icon: Tractor },
-              { step: "02", title: "MONITOR IN REAL-TIME", desc: "Weather, soil, pests — all live on one screen. Get alerts before problems become disasters.", icon: CloudRain },
-              { step: "03", title: "MAXIMIZE YIELD", desc: "Data-driven decisions from planting to sale. Know exactly when to irrigate, fertilize, and harvest.", icon: Sprout },
-            ].map((item, i) => (
-              <motion.div key={item.step} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.2 }} className="relative">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-20 h-20 rounded-full border-2 border-moss flex items-center justify-center mb-6 relative bg-void">
-                    <span className="font-accent text-3xl text-amber">{item.step}</span>
-                    <div className="absolute inset-0 rounded-full border border-moss animate-pulse-glow" />
-                  </div>
-                  <div className="w-16 h-16 rounded-xl bg-moss/10 flex items-center justify-center mb-4">
-                    <item.icon className="w-8 h-8 text-fern" />
-                  </div>
-                  <h3 className="font-display text-xl text-parchment mb-3">{item.title}</h3>
-                  <p className="font-data text-sm text-clay leading-relaxed">{item.desc}</p>
-                </div>
-                {i < 2 && (
-                  <div className="hidden md:block absolute top-10 left-[60%] w-[80%] h-[2px]">
-                    <svg className="w-full h-2" viewBox="0 0 200 2">
-                      <motion.line x1="0" y1="1" x2="200" y2="1" stroke="#2D6A4F" strokeWidth="2" strokeDasharray="8 4"
-                        initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.5 }} />
-                    </svg>
-                  </div>
-                )}
-              </motion.div>
+          {/* Dots */}
+          <div className="flex justify-center gap-2 mt-8">
+            {testimonials.map((_,i) => (
+              <button key={i} onClick={() => setActiveTestimonial(i)}
+                className={`w-2 h-2 rounded-full transition-all ${activeTestimonial===i ? "bg-amber w-6" : "bg-bark hover:bg-clay"}`} />
             ))}
           </div>
         </div>
       </section>
 
-      <PriceTicker />
+      {/* FEATURES CHECKLIST */}
+      <section className="relative z-10 py-20 px-4 bg-loam/20">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <motion.div initial={{opacity:0,x:-30}} whileInView={{opacity:1,x:0}} viewport={{once:true}}>
+              <div className="section-line" />
+              <h2 className="font-display text-3xl md:text-4xl text-parchment mb-6">Everything your farm needs.<br /><span className="text-amber">Nothing you don't.</span></h2>
+              <p className="font-data text-xs text-clay leading-relaxed mb-6">
+                TERRA was built by agronomists and engineers specifically for Indian farming conditions. No generic dashboards. No irrelevant data.
+              </p>
+              <Link href="/dashboard" className="btn-primary">Start Farming Smart <ArrowRight className="w-4 h-4" /></Link>
+            </motion.div>
 
-      <section className="relative z-10 py-24 px-4">
-        <div className="max-w-7xl mx-auto">
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-12">
-            <h2 className="font-display text-3xl md:text-4xl text-parchment mb-4">Crop Calendar 2026</h2>
-            <p className="font-data text-clay">Indian agricultural seasons at a glance</p>
-          </motion.div>
-          <div className="glass-card p-6 overflow-x-auto">
-            <div className="min-w-[800px]">
-              <div className="grid grid-cols-12 gap-1 mb-4">
-                {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((m) => (
-                  <div key={m} className="text-center font-data text-xs text-clay py-2">{m}</div>
-                ))}
-              </div>
-              <div className="space-y-3">
-                {seasonCrops.map((crop) => (
-                  <div key={crop.name} className="grid grid-cols-12 gap-1 items-center group">
-                    <div className="col-span-2 font-data text-sm text-parchment">{crop.name}</div>
-                    <div className="col-span-10 relative h-8 bg-void/50 rounded overflow-hidden">
-                      <motion.div initial={{ width: 0 }} whileInView={{ width: `${((crop.end - crop.start + 1) / 12) * 100}%` }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.3 }}
-                        className={`absolute h-full ${crop.color} rounded opacity-80 group-hover:opacity-100 transition-opacity`}
-                        style={{ left: `${((crop.start - 1) / 12) * 100}%` }} />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="font-data text-[10px] bg-void px-2 py-1 rounded text-parchment">{crop.type} • Sow: {crop.start} • Harvest: {crop.end}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="flex items-center gap-6 mt-6 justify-center font-data text-xs">
-              <span className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-amber" /> Kharif (Jun–Nov)</span>
-              <span className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-leaf" /> Rabi (Nov–Apr)</span>
-              <span className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-wheat" /> Zaid (Mar–Jun)</span>
-            </div>
+            <motion.div initial={{opacity:0,x:30}} whileInView={{opacity:1,x:0}} viewport={{once:true}} className="space-y-3">
+              {[
+                "Real-time soil moisture & NPK monitoring",
+                "7-day hyper-local weather forecasts",
+                "Live MSP + mandi price alerts",
+                "AI-powered pest early warning",
+                "Automated irrigation scheduling",
+                "Yield forecasting & profit calculator",
+                "Full inventory management",
+                "Farm activity calendar & reminders",
+                "No login required — direct app access",
+              ].map((item, i) => (
+                <motion.div key={item} initial={{opacity:0,x:20}} whileInView={{opacity:1,x:0}} viewport={{once:true}} transition={{delay:i*0.05}}
+                  className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-fern flex-shrink-0" />
+                  <span className="font-data text-xs text-parchment/80">{item}</span>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </div>
       </section>
 
-      <section className="relative z-10 py-24 px-4 bg-soil/30">
-        <div className="max-w-7xl mx-auto">
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
-            <h2 className="font-display text-3xl md:text-4xl text-parchment mb-4">Farmer Stories</h2>
-          </motion.div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}
-                className="glass-card p-8 border-l-4 border-l-amber relative">
-                <div className="text-amber text-4xl font-accent mb-4">"</div>
-                <p className="font-display text-lg text-parchment/90 italic mb-6 leading-relaxed">{t.quote}</p>
-                <div className="border-t border-bark pt-4">
-                  <p className="font-data text-sm text-parchment font-bold">{t.name}</p>
-                  <p className="font-data text-xs text-clay">{t.location} • {t.crop}</p>
-                </div>
-                <div className="flex gap-1 mt-3">
-                  {[1, 2, 3, 4, 5].map((star) => <div key={star} className="w-2 h-2 rounded-full bg-amber" />)}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="relative z-10 py-24 px-4">
+      {/* CTA */}
+      <section id="cta" className="relative z-10 py-28 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="glass-card p-12 border border-moss/30">
-            <h2 className="font-display text-3xl md:text-5xl text-parchment mb-6">Ready to Transform Your Farm?</h2>
-            <p className="font-data text-clay mb-8 max-w-xl mx-auto">
-              Join thousands of farmers already using TERRA to increase yields, reduce costs, and sell at the right price.
-              No credit card. No login. Just open and grow.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/dashboard" className="px-8 py-4 bg-moss hover:bg-fern text-parchment rounded-md font-display tracking-wider transition-all hover:scale-105">LAUNCH TERRA NOW</Link>
-              <Link href="/contact" className="px-8 py-4 border border-bark hover:border-amber text-clay hover:text-amber rounded-md font-display tracking-wider transition-all">TALK TO TEAM</Link>
+          <motion.div initial={{opacity:0,scale:0.95}} whileInView={{opacity:1,scale:1}} viewport={{once:true}}
+            className="glass-card p-14 border border-moss/20 relative overflow-hidden">
+            <div className="absolute inset-0 bg-mesh-1 opacity-50 pointer-events-none" />
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber/10 border border-amber/30 mb-6">
+                <Zap className="w-3.5 h-3.5 text-amber" />
+                <span className="font-data text-[11px] text-amber tracking-wider">NO LOGIN REQUIRED</span>
+              </div>
+              <h2 className="font-display text-4xl md:text-6xl text-parchment mb-6 leading-tight">
+                Ready to Transform<br />Your <span className="text-amber">Farm</span>?
+              </h2>
+              <p className="font-data text-sm text-clay mb-10 max-w-lg mx-auto leading-relaxed">
+                Join thousands of farmers already using TERRA to increase yields, reduce costs, and sell at the right price. Open and grow — instantly.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/dashboard"
+                  className="group flex items-center justify-center gap-2 px-10 py-4 bg-moss hover:bg-fern text-parchment rounded-xl font-display tracking-[0.1em] transition-all hover:scale-105 hover:shadow-xl hover:shadow-moss/30">
+                  LAUNCH TERRA NOW <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link href="/contact"
+                  className="flex items-center justify-center gap-2 px-10 py-4 border border-bark hover:border-amber text-clay hover:text-amber rounded-xl font-display tracking-[0.1em] transition-all">
+                  TALK TO OUR TEAM
+                </Link>
+              </div>
             </div>
           </motion.div>
         </div>

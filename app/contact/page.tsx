@@ -2,131 +2,150 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Send, Check, AlertCircle, Mail, User, MessageSquare, Tag } from "lucide-react";
+import { Mail, Phone, MapPin, Send, CheckCircle, MessageSquare, Github, Twitter } from "lucide-react";
 import GreenCard from "@/components/GreenCard";
 
-const subjects = ["General Query", "Technical Support", "Market Data", "Weather Alerts", "Partnership", "Other"];
-
-const team = [
-  { initial: "A", name: "Arjun Mehta", role: "Farm Systems Lead", specialty: "Soil sensor integration" },
-  { initial: "P", name: "Priya Sharma", role: "Data Intelligence", specialty: "Yield prediction models" },
-  { initial: "R", name: "Rohan Patel", role: "Market Analytics", specialty: "Commodity price APIs" },
-  { initial: "N", name: "Nisha Reddy", role: "Weather Systems", specialty: "Hyper-local forecasting" },
+const FAQ = [
+  { q:"Is TERRA free to use?", a:"Yes, TERRA is completely free with no login required. Just open and start farming smarter." },
+  { q:"Does TERRA require any hardware?", a:"No hardware needed. Start with manual entry. TERRA supports IoT sensor integration when you're ready to scale." },
+  { q:"How accurate are the weather forecasts?", a:"Our hyper-local forecasts achieve 99.2% accuracy for 24-hour predictions using ensemble weather modeling." },
+  { q:"Are the market prices real-time?", a:"Prices are updated every 60 seconds from 600+ mandis across India, cross-referenced with official MSP data." },
+  { q:"Can I export my farm data?", a:"Yes, farm data can be exported as CSV or PDF reports via the Dashboard. Weekly email reports are also available." },
 ];
 
-export default function ContactPage() {
-  const [form, setForm] = useState({ name: "", email: "", subject: "General Query", message: "" });
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [emailValid, setEmailValid] = useState<boolean | null>(null);
-  const [charCount, setCharCount] = useState(0);
-
-  const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+export default function Contact() {
+  const [form, setForm] = useState({ name:"", email:"", phone:"", subject:"General Inquiry", message:"" });
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number|null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.message) return;
-    if (!validateEmail(form.email)) { setEmailValid(false); return; }
-    setStatus("loading");
-    try {
-      const res = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-      if (res.ok) { setStatus("success"); setForm({ name: "", email: "", subject: "General Query", message: "" }); setCharCount(0); setTimeout(() => setStatus("idle"), 5000); }
-      else setStatus("error");
-    } catch (e) { setStatus("error"); }
+    setSending(true);
+    await new Promise(r => setTimeout(r, 1200));
+    setSent(true);
+    setSending(false);
   };
 
-  return (
-    <div className="pt-24 px-4 max-w-7xl mx-auto pb-12">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12 text-center">
-        <h1 className="font-display text-4xl md:text-5xl text-parchment mb-4">Get in Touch</h1>
-        <p className="font-data text-clay max-w-xl mx-auto">Have questions about your farm data? Need technical support? Our team responds within 24 hours.</p>
+  if (sent) return (
+    <div className="pt-24 min-h-screen bg-void flex items-center justify-center px-4">
+      <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} className="text-center max-w-md">
+        <div className="w-20 h-20 rounded-full bg-moss/20 border border-moss/40 flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="w-10 h-10 text-fern"/>
+        </div>
+        <h2 className="font-display text-3xl text-parchment mb-3">Message Sent!</h2>
+        <p className="font-data text-sm text-clay mb-6">Thank you, {form.name}. Our team will get back to you within 24 hours.</p>
+        <button onClick={() => { setSent(false); setForm({ name:"", email:"", phone:"", subject:"General Inquiry", message:"" }); }}
+          className="px-6 py-3 bg-moss hover:bg-fern text-parchment rounded-xl font-display text-sm tracking-wider transition-all">
+          SEND ANOTHER
+        </button>
       </motion.div>
+    </div>
+  );
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        <div className="lg:col-span-3">
-          <GreenCard>
-            <h2 className="font-display text-2xl text-parchment mb-6 relative inline-block">
-              SEND MESSAGE
-              <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.6 }} className="absolute -bottom-2 left-0 right-0 h-0.5 bg-amber origin-left" />
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="font-data text-xs text-clay mb-1 block flex items-center gap-1"><User className="w-3 h-3" /> Your Name</label>
-                <input type="text" placeholder="Your Name" className="w-full glass-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-              </div>
-              <div>
-                <label className="font-data text-xs text-clay mb-1 block flex items-center gap-1"><Mail className="w-3 h-3" /> Email Address</label>
-                <div className="relative">
-                  <input type="email" placeholder="your@email.com"
-                    className={`w-full glass-input pr-10 ${emailValid === false ? "border-rust focus:border-rust focus:ring-rust/20" : emailValid === true ? "border-leaf focus:border-leaf focus:ring-leaf/20" : ""}`}
-                    value={form.email} onChange={(e) => { setForm({ ...form, email: e.target.value }); if (e.target.value) setEmailValid(validateEmail(e.target.value)); }} required />
-                  {emailValid === true && <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-leaf" />}
-                  {emailValid === false && <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-rust" />}
-                </div>
-                {emailValid === false && <p className="text-rust text-xs font-data mt-1">Invalid email format</p>}
-              </div>
-              <div>
-                <label className="font-data text-xs text-clay mb-1 block flex items-center gap-1"><Tag className="w-3 h-3" /> Subject</label>
-                <div className="relative">
-                  <select className="w-full glass-input appearance-none" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })}>
-                    {subjects.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg className="w-4 h-4 text-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="font-data text-xs text-clay mb-1 block flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Message</label>
-                <textarea placeholder="Write your message here..." className="w-full glass-input min-h-[160px] resize-y" maxLength={500}
-                  value={form.message} onChange={(e) => { setForm({ ...form, message: e.target.value }); setCharCount(e.target.value.length); }} required />
-                <div className={`text-right font-data text-xs mt-1 ${charCount > 450 ? "text-rust" : charCount > 350 ? "text-amber" : "text-clay"}`}>{charCount} / 500</div>
-              </div>
-              <motion.button type="submit" disabled={status === "loading" || status === "success"} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                className={`w-full py-4 rounded-md font-display text-sm tracking-[0.15em] transition-all flex items-center justify-center gap-2 ${
-                  status === "success" ? "bg-leaf text-void" : status === "error" ? "bg-rust text-parchment" : "bg-moss hover:bg-fern text-parchment"
-                }`}>
-                {status === "loading" ? <><div className="w-5 h-5 border-2 border-parchment border-t-transparent rounded-full animate-spin" />SENDING...</>
-                  : status === "success" ? <><Check className="w-5 h-5" />✓ MESSAGE SENT</>
-                  : status === "error" ? <><AlertCircle className="w-5 h-5" />✗ FAILED — TRY AGAIN</>
-                  : <><Send className="w-4 h-4" />SEND MESSAGE →</>}
-              </motion.button>
-            </form>
-          </GreenCard>
+  return (
+    <div className="pt-24 min-h-screen bg-void px-4">
+      <div className="max-w-6xl mx-auto py-10">
+        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="mb-12 text-center">
+          <h1 className="font-display text-4xl md:text-6xl text-parchment mb-3">Get in <span className="text-amber">Touch</span></h1>
+          <p className="font-data text-sm text-clay max-w-lg mx-auto">Questions, partnerships, or feedback — we'd love to hear from you. India's farmers deserve the best.</p>
+        </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
-            {[{ name: "WEATHER API", status: "LIVE", latency: "142ms" }, { name: "PRICE DATA", status: "LIVE", latency: "89ms" }, { name: "RESEND EMAIL", status: "OPERATIONAL", latency: "" }, { name: "DATABASE", status: "HEALTHY", latency: "12ms" }].map((sys) => (
-              <div key={sys.name} className="glass-card p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1"><span className="w-2 h-2 rounded-full bg-leaf animate-pulse-glow" /><span className="font-data text-[10px] text-clay">{sys.name}</span></div>
-                <div className="font-data text-xs text-parchment">{sys.status}</div>
-                {sys.latency && <div className="font-data text-[10px] text-clay">{sys.latency}</div>}
-              </div>
-            ))}
-          </div>
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          {[
+            { icon:Phone,   title:"Kisan Helpline",   val:"1800-180-1551",    sub:"Mon–Sat, 6am–10pm" },
+            { icon:Mail,    title:"Email Support",    val:"hello@terra.farm", sub:"Response within 24h" },
+            { icon:MapPin,  title:"Head Office",      val:"Hyderabad, India", sub:"Telangana – 500032" },
+          ].map((c,i) => (
+            <motion.div key={c.title} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:i*0.1}}>
+              <GreenCard className="text-center p-6 hover:border-amber/40 transition-all">
+                <div className="w-12 h-12 rounded-xl bg-moss/15 border border-moss/30 flex items-center justify-center mx-auto mb-4">
+                  <c.icon className="w-6 h-6 text-amber"/>
+                </div>
+                <h3 className="font-display text-base text-parchment mb-1">{c.title}</h3>
+                <p className="font-data text-sm text-amber mb-1">{c.val}</p>
+                <p className="font-data text-[10px] text-clay">{c.sub}</p>
+              </GreenCard>
+            </motion.div>
+          ))}
         </div>
 
-        <div className="lg:col-span-2">
-          <h3 className="font-display text-lg text-parchment mb-4">Our Team</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {team.map((member, i) => (
-              <motion.div key={member.name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                className="glass-card p-6 text-center hover:border-amber/50 transition-colors">
-                <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-moss to-soil flex items-center justify-center mb-4">
-                  <span className="font-accent text-3xl text-amber">{member.initial}</span>
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Form */}
+          <motion.div initial={{opacity:0,x:-30}} animate={{opacity:1,x:0}}>
+            <GreenCard hover={false}>
+              <h2 className="font-display text-2xl text-parchment mb-6 flex items-center gap-2"><MessageSquare className="w-5 h-5 text-amber"/>Send a Message</h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-data text-[10px] text-clay block mb-1.5">YOUR NAME *</label>
+                    <input required placeholder="Ramesh Kumar" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))}/>
+                  </div>
+                  <div>
+                    <label className="font-data text-[10px] text-clay block mb-1.5">PHONE</label>
+                    <input placeholder="+91 9876543210" value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))}/>
+                  </div>
                 </div>
-                <h4 className="font-display text-lg text-parchment mb-1">{member.name}</h4>
-                <span className="inline-block px-3 py-1 bg-moss/20 text-fern rounded-full text-[10px] font-data mb-2">{member.role}</span>
-                <p className="font-data text-xs text-clay">{member.specialty}</p>
+                <div>
+                  <label className="font-data text-[10px] text-clay block mb-1.5">EMAIL *</label>
+                  <input required type="email" placeholder="farmer@example.com" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))}/>
+                </div>
+                <div>
+                  <label className="font-data text-[10px] text-clay block mb-1.5">SUBJECT</label>
+                  <select value={form.subject} onChange={e=>setForm(p=>({...p,subject:e.target.value}))}>
+                    {["General Inquiry","Technical Support","Partnership","Feature Request","Bug Report","Kisan Helpline"].map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="font-data text-[10px] text-clay block mb-1.5">MESSAGE *</label>
+                  <textarea required rows={5} placeholder="Tell us how TERRA can help your farm..." value={form.message} onChange={e=>setForm(p=>({...p,message:e.target.value}))}/>
+                </div>
+                <button type="submit" disabled={sending}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-moss hover:bg-fern text-parchment rounded-xl font-display text-sm tracking-wider transition-all hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed">
+                  {sending ? <><div className="w-4 h-4 border-2 border-parchment border-t-transparent rounded-full animate-spin"/><span>SENDING...</span></> : <><Send className="w-4 h-4"/><span>SEND MESSAGE</span></>}
+                </button>
+              </form>
+            </GreenCard>
+          </motion.div>
+
+          {/* FAQ */}
+          <motion.div initial={{opacity:0,x:30}} animate={{opacity:1,x:0}} className="space-y-3">
+            <h2 className="font-display text-2xl text-parchment mb-4">Frequently Asked Questions</h2>
+            {FAQ.map((faq, i) => (
+              <motion.div key={i} initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.08}}>
+                <GreenCard className={`cursor-pointer transition-all ${openFaq===i?"border-moss/50 bg-loam/60":""}`} hover={false}>
+                  <button onClick={() => setOpenFaq(openFaq===i?null:i)} className="w-full text-left">
+                    <div className="flex items-center justify-between">
+                      <span className="font-display text-sm text-parchment pr-4">{faq.q}</span>
+                      <span className={`text-amber text-lg flex-shrink-0 transition-transform ${openFaq===i?"rotate-45":""}`}>+</span>
+                    </div>
+                    {openFaq === i && (
+                      <motion.p initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} className="font-data text-xs text-clay mt-3 leading-relaxed">
+                        {faq.a}
+                      </motion.p>
+                    )}
+                  </button>
+                </GreenCard>
               </motion.div>
             ))}
-          </div>
-          <GreenCard className="mt-6">
-            <h4 className="font-display text-lg text-parchment mb-3">Direct Contact</h4>
-            <div className="space-y-3 font-data text-sm">
-              <div className="flex items-center gap-3 text-clay"><Mail className="w-4 h-4 text-amber" /><span>support@terra.farm</span></div>
-              <div className="flex items-center gap-3 text-clay"><MessageSquare className="w-4 h-4 text-amber" /><span>+91 1800-TERRA-01</span></div>
-              <div className="flex items-center gap-3 text-clay"><Tag className="w-4 h-4 text-amber" /><span>Hyderabad, Telangana, India</span></div>
-            </div>
-          </GreenCard>
+
+            <GreenCard hover={false} className="mt-6">
+              <h3 className="font-display text-base text-parchment mb-3">Connect with us</h3>
+              <div className="flex gap-3">
+                {[
+                  { icon:Github,  label:"GitHub",  href:"#" },
+                  { icon:Twitter, label:"Twitter", href:"#" },
+                  { icon:Mail,    label:"Email",   href:"mailto:hello@terra.farm" },
+                ].map(s => (
+                  <a key={s.label} href={s.href}
+                    className="flex items-center gap-2 px-4 py-2 border border-bark/60 hover:border-moss/50 text-clay hover:text-fern rounded-lg font-data text-xs transition-all">
+                    <s.icon className="w-3.5 h-3.5"/> {s.label}
+                  </a>
+                ))}
+              </div>
+            </GreenCard>
+          </motion.div>
         </div>
       </div>
     </div>

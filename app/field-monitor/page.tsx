@@ -6,7 +6,7 @@ import { Droplets, Plus, Thermometer, Activity, AlertTriangle, X, Save, Sprout, 
 import { useFarmStore } from "@/lib/store";
 import GreenCard from "@/components/GreenCard";
 import { getHealthColor, getMoistureStatus } from "@/lib/utils";
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 
 const tooltipStyle = { backgroundColor:"#0A0600", border:"1px solid #3D2410", borderRadius:"6px", fontFamily:"Space Mono", fontSize:"11px", color:"#F5E6C8" };
 

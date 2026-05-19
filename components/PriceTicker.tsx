@@ -1,53 +1,37 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import { ArrowUp, ArrowDown } from "lucide-react";
-
-const commodities = [
-  { name: "WHEAT", price: 2150, change: 2.3, emoji: "🌾" },
-  { name: "RICE", price: 1940, change: 0.8, emoji: "🍚" },
-  { name: "MAIZE", price: 1890, change: -1.2, emoji: "🌽" },
-  { name: "SOYBEAN", price: 4200, change: 3.1, emoji: "🫘" },
-  { name: "ONION", price: 840, change: -4.5, emoji: "🧅" },
-  { name: "TOMATO", price: 1200, change: 12.4, emoji: "🍅" },
-  { name: "COTTON", price: 6620, change: 1.5, emoji: "🧶" },
-  { name: "POTATO", price: 950, change: -0.8, emoji: "🥔" },
-];
+import { TrendingUp, TrendingDown } from "lucide-react";
+import { CROPS, getLivePrices } from "@/lib/utils";
 
 export default function PriceTicker() {
-  const [prices, setPrices] = useState(commodities);
+  const [prices, setPrices] = useState<Record<string,any>>({});
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setPrices((prev) =>
-        prev.map((c) => {
-          const drift = (Math.random() - 0.5) * 0.02;
-          const newPrice = Math.round(c.price * (1 + drift));
-          const change = ((newPrice - c.price) / c.price) * 100;
-          return { ...c, price: newPrice, change: parseFloat(change.toFixed(1)) };
-        })
-      );
-    }, 60000);
-    return () => clearInterval(interval);
+    setPrices(getLivePrices());
+    const iv = setInterval(() => setPrices(getLivePrices()), 60000);
+    return () => clearInterval(iv);
   }, []);
 
-  const tickerContent = [...prices, ...prices].map((c, i) => (
-    <span key={i} className="inline-flex items-center gap-2 mx-6 whitespace-nowrap">
-      <span>{c.emoji}</span>
-      <span className="text-parchment font-data">{c.name}</span>
-      <span className="font-data font-bold">₹{c.price.toLocaleString("en-IN")}/qtl</span>
-      <span className={`flex items-center gap-0.5 font-data text-sm ${c.change >= 0 ? "text-leaf" : "text-rust"}`}>
-        {c.change >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-        {Math.abs(c.change)}%
-      </span>
-      <span className="text-bark">•</span>
-    </span>
-  ));
+  const items = Object.entries(CROPS).map(([key, data]) => ({
+    key, ...data, price: prices[key]?.current || data.base, change: prices[key]?.changePercent || 0
+  }));
+
+  const ticker = [...items, ...items];
 
   return (
-    <div className="w-full bg-[#0D0800] border-y border-bark overflow-hidden py-3">
-      <div className="animate-ticker flex whitespace-nowrap hover:[animation-play-state:paused]">
-        {tickerContent}
+    <div className="bg-loam/50 border-y border-bark/40 py-2 overflow-hidden relative">
+      <div className="flex items-center gap-4 animate-ticker" style={{ width:"max-content" }}>
+        {ticker.map((item, i) => (
+          <div key={i} className="flex items-center gap-2 px-4 border-r border-bark/30 flex-shrink-0">
+            <span className="text-base">{item.emoji}</span>
+            <span className="font-display text-xs text-parchment tracking-wider">{item.key.toUpperCase()}</span>
+            <span className="font-data text-sm text-amber">₹{item.price.toLocaleString("en-IN")}</span>
+            <span className={`flex items-center gap-0.5 font-data text-[10px] ${item.change >= 0 ? "text-fern" : "text-rust"}`}>
+              {item.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {Math.abs(item.change).toFixed(1)}%
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
