@@ -279,7 +279,7 @@ export default function Market() {
               <div className="space-y-4">
                 <div><label className="block text-xs font-semibold text-slate-500 mb-1.5">COMMODITY</label>
                   <select value={alertForm.commodity} onChange={e=>setAlertForm(p=>({...p,commodity:e.target.value}))}>
-                    {Object.entries(CROPS).map(([k,v])<option key={k} value={k}>{v.emoji} {k.toUpperCase()}</option>)}
+                    {Object.entries(CROPS).map(([k,v]) => <option key={k} value={k}>{v.emoji} {k.toUpperCase()}</option>)}
                   </select>
                 </div>
                 <div>
