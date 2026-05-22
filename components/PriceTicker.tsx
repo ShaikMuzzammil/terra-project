@@ -1,37 +1,33 @@
 "use client";
 import { useEffect, useState } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
 import { CROPS, getLivePrices } from "@/lib/utils";
 
 export default function PriceTicker() {
   const [prices, setPrices] = useState<Record<string,any>>({});
-
   useEffect(() => {
     setPrices(getLivePrices());
     const iv = setInterval(() => setPrices(getLivePrices()), 60000);
     return () => clearInterval(iv);
-  }, []);
+  },[]);
 
-  const items = Object.entries(CROPS).map(([key, data]) => ({
-    key, ...data, price: prices[key]?.current || data.base, change: prices[key]?.changePercent || 0
-  }));
-
-  const ticker = [...items, ...items];
+  const items = Object.entries(CROPS).map(([k,v]) => ({ k, ...v, cur: prices[k]?.current||v.base, pct: prices[k]?.pct||0 }));
+  const dbl = [...items,...items];
 
   return (
-    <div className="bg-loam/50 border-y border-bark/40 py-2 overflow-hidden relative">
-      <div className="flex items-center gap-4 animate-ticker" style={{ width:"max-content" }}>
-        {ticker.map((item, i) => (
-          <div key={i} className="flex items-center gap-2 px-4 border-r border-bark/30 flex-shrink-0">
-            <span className="text-base">{item.emoji}</span>
-            <span className="font-display text-xs text-parchment tracking-wider">{item.key.toUpperCase()}</span>
-            <span className="font-data text-sm text-amber">₹{item.price.toLocaleString("en-IN")}</span>
-            <span className={`flex items-center gap-0.5 font-data text-[10px] ${item.change >= 0 ? "text-fern" : "text-rust"}`}>
-              {item.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {Math.abs(item.change).toFixed(1)}%
-            </span>
-          </div>
-        ))}
+    <div className="bg-brand-700 overflow-hidden">
+      <div className="flex items-center" style={{width:"max-content"}}>
+        <div className="ticker-inner flex items-center">
+          {dbl.map((it, i) => (
+            <div key={i} className="flex items-center gap-2 px-5 py-2 border-r border-brand-600 flex-shrink-0">
+              <span className="text-base">{it.emoji}</span>
+              <span className="text-white font-semibold text-xs tracking-wide">{it.k.toUpperCase()}</span>
+              <span className="text-brand-200 font-mono text-sm">₹{it.cur.toLocaleString("en-IN")}</span>
+              <span className={`text-xs font-semibold ${it.pct >= 0 ? "text-green-300" : "text-red-300"}`}>
+                {it.pct >= 0 ? "▲" : "▼"}{Math.abs(it.pct).toFixed(1)}%
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

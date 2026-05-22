@@ -1,151 +1,147 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sprout, LayoutDashboard, CloudRain, Package, TrendingUp, Calendar, Mail, Menu, X, ChevronRight, Home, Activity, Bell } from "lucide-react";
-import { useFarmStore } from "@/lib/store";
+import {
+  Sprout, LayoutDashboard, CloudRain, Package, TrendingUp,
+  Calendar, Mail, Menu, X, Bell, ChevronRight, Home,
+  Info, Search
+} from "lucide-react";
+import { useStore } from "@/lib/store";
 
-const navLinks = [
-  { href:"/",              label:"Home",      icon:Home,           section:"hero" },
-  { href:"/dashboard",     label:"Dashboard", icon:LayoutDashboard },
-  { href:"/field-monitor", label:"Fields",    icon:Sprout },
-  { href:"/weather",       label:"Weather",   icon:CloudRain },
-  { href:"/market",        label:"Market",    icon:TrendingUp },
-  { href:"/inventory",     label:"Inventory", icon:Package },
-  { href:"/calendar",      label:"Calendar",  icon:Calendar },
-  { href:"/contact",       label:"Contact",   icon:Mail },
+const NAV = [
+  { href:"/dashboard",     label:"Dashboard",    icon:LayoutDashboard },
+  { href:"/field-monitor", label:"My Fields",    icon:Sprout },
+  { href:"/weather",       label:"Weather",      icon:CloudRain },
+  { href:"/market",        label:"Market",       icon:TrendingUp },
+  { href:"/inventory",     label:"Inventory",    icon:Package },
+  { href:"/calendar",      label:"Calendar",     icon:Calendar },
+  { href:"/about",         label:"About",        icon:Info },
+  { href:"/contact",       label:"Contact",      icon:Mail },
+];
+
+const HOME_SECTIONS = [
+  {id:"hero",s:"Home"},{id:"features",s:"Features"},
+  {id:"how-it-works",s:"How It Works"},{id:"benefits",s:"Benefits"},
+  {id:"market-preview",s:"Market"},{id:"testimonials",s:"Stories"},
 ];
 
 export default function Navigation() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [activeSection, setActiveSection] = useState("");
-  const [showAlerts, setShowAlerts] = useState(false);
+  const [activeSection, setActiveSection] = useState("hero");
+  const [showNotifs, setShowNotifs] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { alerts, dismissAlert } = useFarmStore();
-
-  const activeAlerts = alerts.filter(a => !a.dismissed);
+  const { notifications, markRead, markAllRead, unreadCount } = useStore();
+  const unread = notifications.filter(n=>!n.read);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-      if (pathname === "/") {
-        const sections = ["hero","features","how-it-works","market-preview","testimonials","cta"];
-        for (const id of sections) {
-          const el = document.getElementById(id);
-          if (el) {
-            const rect = el.getBoundingClientRect();
-            if (rect.top <= 80 && rect.bottom >= 80) { setActiveSection(id); break; }
-          }
+    const onScroll = () => {
+      setScrolled(window.scrollY > 16);
+      if (pathname !== "/") return;
+      HOME_SECTIONS.forEach(({id}) => {
+        const el = document.getElementById(id);
+        if (el) {
+          const r = el.getBoundingClientRect();
+          if (r.top <= 90 && r.bottom >= 90) setActiveSection(id);
         }
-      }
+      });
     };
-    window.addEventListener("scroll", handleScroll, { passive:true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll, {passive:true});
+    return () => window.removeEventListener("scroll", onScroll);
   }, [pathname]);
 
-  const homeNavSections = [
-    { id:"hero",           label:"Home" },
-    { id:"features",       label:"Features" },
-    { id:"how-it-works",   label:"How It Works" },
-    { id:"market-preview", label:"Markets" },
-    { id:"testimonials",   label:"Stories" },
-  ];
-
-  const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior:"smooth", block:"start" });
-    setMobileOpen(false);
-  };
-
-  const handleHome = () => { router.push("/"); setMobileOpen(false); };
+  const scroll = (id:string) => { document.getElementById(id)?.scrollIntoView({behavior:"smooth"}); setOpen(false); };
+  const notifColors = { success:"text-brand-500", warning:"text-gold-500", error:"text-rose-500", info:"text-sky-500" };
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-soil/95 backdrop-blur-xl border-b border-bark/60 shadow-lg shadow-void/50" : "bg-soil/80 backdrop-blur-md border-b border-bark/30"}`}>
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? "bg-white/95 backdrop-blur-xl shadow-sm border-b border-slate-200/80" : "bg-transparent"
+      }`}>
+        <div className="container">
           <div className="flex items-center justify-between h-16">
-
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
-              <div className="relative w-9 h-9 rounded-lg bg-gradient-to-br from-moss to-fern flex items-center justify-center shadow-lg group-hover:shadow-moss/40 transition-all duration-300">
-                <Sprout className="w-5 h-5 text-parchment" />
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-moss to-fern opacity-0 group-hover:opacity-100 blur-sm transition-opacity" />
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-9 h-9 rounded-xl bg-brand-grad flex items-center justify-center shadow-green">
+                <Sprout className="w-5 h-5 text-white"/>
               </div>
               <div>
-                <span className="font-display text-xl font-bold text-parchment tracking-widest block leading-none">TERRA</span>
-                <span className="font-data text-[8px] text-clay tracking-[0.2em]">FARM INTELLIGENCE</span>
+                <span className="font-bold text-slate-800 text-lg tracking-tight block leading-none">AgroWave</span>
+                <span className="text-[10px] text-brand-600 font-semibold tracking-widest">SMART FARMING</span>
               </div>
             </Link>
 
-            {/* Desktop Nav */}
-            <div className="hidden lg:flex items-center gap-0.5">
+            {/* Desktop links */}
+            <div className="hidden lg:flex items-center gap-1">
               {pathname === "/" ? (
-                // Home page: section nav
-                homeNavSections.map(sec => (
-                  <button key={sec.id} onClick={() => scrollToSection(sec.id)}
-                    className={`relative px-3 py-2 rounded-md font-data text-xs tracking-wide transition-all ${activeSection === sec.id ? "text-amber" : "text-clay hover:text-parchment"}`}>
-                    {sec.label}
-                    {activeSection === sec.id && (
-                      <motion.div layoutId="navHighlight" className="absolute bottom-0 left-2 right-2 h-[2px] bg-amber rounded-full" />
-                    )}
+                HOME_SECTIONS.map(s => (
+                  <button key={s.id} onClick={() => scroll(s.id)}
+                    className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      activeSection===s.id ? "text-brand-600" : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                    }`}>
+                    {s.s}
+                    {activeSection===s.id && <motion.div layoutId="navUnderline" className="absolute bottom-0.5 left-3 right-3 h-0.5 bg-brand-500 rounded-full"/>}
                   </button>
                 ))
-              ) : (
-                navLinks.map(link => {
-                  const Icon = link.icon;
-                  const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
-                  return (
-                    <Link key={link.href} href={link.href}
-                      className={`relative flex items-center gap-1.5 px-3 py-2 rounded-md font-data text-xs tracking-wide transition-all duration-200 ${isActive ? "text-amber bg-amber/8" : "text-clay hover:text-parchment hover:bg-loam/60"}`}>
-                      <Icon className="w-3.5 h-3.5" />
-                      {link.label}
-                      {isActive && <motion.div layoutId="activeNav" className="absolute bottom-0 left-2 right-2 h-[2px] bg-amber rounded-full" />}
-                    </Link>
-                  );
-                })
-              )}
+              ) : NAV.slice(0,6).map(n => {
+                const active = pathname===n.href || (n.href!=="/" && pathname.startsWith(n.href));
+                const Icon = n.icon;
+                return (
+                  <Link key={n.href} href={n.href}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all relative ${
+                      active ? "text-brand-600 bg-brand-50" : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                    }`}>
+                    <Icon className="w-4 h-4"/>
+                    {n.label}
+                    {active && <motion.div layoutId="navActive" className="absolute bottom-0.5 left-3 right-3 h-0.5 bg-brand-500 rounded-full"/>}
+                  </Link>
+                );
+              })}
             </div>
 
-            {/* Right side */}
+            {/* Right */}
             <div className="flex items-center gap-2">
-              {/* Alert bell */}
+              {/* Notifications */}
               <div className="relative">
-                <button onClick={() => setShowAlerts(!showAlerts)}
-                  className="relative p-2 rounded-lg text-clay hover:text-amber hover:bg-loam/60 transition-all">
-                  <Bell className="w-4 h-4" />
-                  {activeAlerts.length > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-rust text-white text-[9px] rounded-full flex items-center justify-center font-data animate-pulse">
-                      {activeAlerts.length}
+                <button onClick={() => setShowNotifs(!showNotifs)}
+                  className="relative p-2.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all">
+                  <Bell className="w-5 h-5"/>
+                  {unread.length > 0 && (
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                      {unread.length > 9 ? "9+" : unread.length}
                     </span>
                   )}
                 </button>
 
                 <AnimatePresence>
-                  {showAlerts && (
-                    <motion.div initial={{ opacity:0, y:8, scale:0.95 }} animate={{ opacity:1, y:0, scale:1 }} exit={{ opacity:0, y:8, scale:0.95 }}
-                      className="absolute right-0 top-full mt-2 w-80 glass-card border-bark/80 overflow-hidden z-50"
-                      style={{ background:"rgba(16,10,2,0.97)" }}>
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-bark/60">
-                        <span className="font-display text-sm text-parchment">Farm Alerts</span>
-                        <button onClick={() => { useFarmStore.getState().clearAllAlerts(); setShowAlerts(false); }}
-                          className="font-data text-[10px] text-clay hover:text-amber transition-colors">CLEAR ALL</button>
+                  {showNotifs && (
+                    <motion.div initial={{opacity:0,y:8,scale:.96}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:8,scale:.96}}
+                      className="absolute right-0 top-full mt-2 w-96 bg-white rounded-2xl shadow-float border border-slate-200 overflow-hidden z-50">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <Bell className="w-4 h-4 text-brand-600"/>
+                          <span className="font-semibold text-slate-800">Notifications</span>
+                          {unread.length > 0 && <span className="badge badge-red">{unread.length} new</span>}
+                        </div>
+                        <button onClick={markAllRead} className="text-xs text-brand-600 hover:text-brand-700 font-medium">Mark all read</button>
                       </div>
-                      <div className="max-h-72 overflow-y-auto">
-                        {activeAlerts.length === 0 ? (
-                          <div className="py-6 text-center font-data text-xs text-clay">No active alerts</div>
-                        ) : activeAlerts.map(a => (
-                          <div key={a.id} className={`flex items-start gap-3 px-4 py-3 border-b border-bark/30 alert-${a.severity}`}>
-                            <span className="text-sm mt-0.5">{a.type==="weather"?"🌧":a.type==="pest"?"🐛":a.type==="price"?"📈":a.type==="irrigation"?"💧":"⚠️"}</span>
+                      <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
+                        {notifications.length === 0 ? (
+                          <div className="py-8 text-center text-slate-400 text-sm">No notifications</div>
+                        ) : notifications.slice(0,10).map(n => (
+                          <button key={n.id} onClick={() => markRead(n.id)}
+                            className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-start gap-3 ${!n.read ? "bg-brand-50/50" : ""}`}>
+                            <span className="text-lg mt-0.5">{n.type==="success"?"✅":n.type==="warning"?"⚠️":n.type==="error"?"🚨":"ℹ️"}</span>
                             <div className="flex-1 min-w-0">
-                              <p className="font-data text-xs text-parchment leading-relaxed">{a.message}</p>
+                              <p className={`text-sm font-medium ${!n.read?"text-slate-800":"text-slate-600"}`}>{n.title}</p>
+                              <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{n.body}</p>
+                              <p className="text-[10px] text-slate-300 mt-1">{n.time}</p>
                             </div>
-                            <button onClick={() => dismissAlert(a.id)} className="text-clay hover:text-parchment mt-0.5 flex-shrink-0">
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                            {!n.read && <span className="w-2 h-2 rounded-full bg-brand-500 mt-1.5 flex-shrink-0"/>}
+                          </button>
                         ))}
                       </div>
                     </motion.div>
@@ -153,79 +149,62 @@ export default function Navigation() {
                 </AnimatePresence>
               </div>
 
-              {/* Home button (visible on non-home pages) */}
               {pathname !== "/" && (
-                <button onClick={handleHome}
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-bark/60 text-clay hover:text-parchment hover:border-moss/50 font-data text-xs tracking-wide transition-all">
-                  <Home className="w-3.5 h-3.5" />
-                  Home
+                <button onClick={() => router.push("/")}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300 text-sm font-medium transition-all">
+                  <Home className="w-4 h-4"/> Home
                 </button>
               )}
 
               <Link href="/dashboard"
-                className="hidden md:flex items-center gap-1.5 px-4 py-2 bg-moss hover:bg-fern text-parchment rounded-lg font-display text-xs tracking-[0.1em] transition-all hover:scale-105 hover:shadow-lg hover:shadow-moss/30">
-                LAUNCH APP
-                <ChevronRight className="w-3.5 h-3.5" />
+                className="btn btn-primary hidden md:flex text-sm px-5 py-2.5">
+                Open Farm <ChevronRight className="w-4 h-4"/>
               </Link>
 
-              {/* Mobile hamburger */}
-              <button onClick={() => setMobileOpen(!mobileOpen)}
-                className="lg:hidden p-2 rounded-lg text-clay hover:text-parchment hover:bg-loam/60 transition-all">
-                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <button onClick={() => setOpen(!open)} className="lg:hidden p-2.5 rounded-xl hover:bg-slate-100 text-slate-500">
+                {open ? <X className="w-5 h-5"/> : <Menu className="w-5 h-5"/>}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Live status bar */}
-        <div className="hidden sm:flex border-t border-bark/20 bg-void/50 px-6 py-1 items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <span className="status-dot" style={{background:"#95D5B2"}} />
-              <span className="font-data text-[10px] text-fern tracking-widest">ALL SYSTEMS ACTIVE</span>
-            </div>
-            <span className="font-data text-[10px] text-bark">|</span>
-            <span className="font-data text-[10px] text-clay">🌾 KHARIF 2026 // Day 47 of 120</span>
+        {/* Live strip */}
+        <div className="hidden sm:flex bg-brand-600 px-6 py-1.5 items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="dot-live" style={{background:"#A7F3D0"}}/>
+            <span className="text-brand-100 text-[11px] font-semibold tracking-widest">LIVE MONITORING</span>
+            <span className="text-brand-200 text-[11px]">KHARIF 2026 · Day 47 of 120</span>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="font-data text-[10px] text-clay">6 PLOTS MONITORED</span>
-            <span className="font-data text-[10px] text-amber">{activeAlerts.length} ACTIVE ALERTS</span>
+          <div className="flex items-center gap-4 text-[11px] text-brand-200">
+            <span>6 Plots Active</span>
+            <span>·</span>
+            <span className={unread.length > 0 ? "text-yellow-300 font-semibold" : ""}>{unread.length} New Alerts</span>
           </div>
         </div>
       </nav>
 
       {/* Mobile drawer */}
       <AnimatePresence>
-        {mobileOpen && (
+        {open && (
           <>
-            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-              className="fixed inset-0 z-40 bg-void/80 backdrop-blur-sm lg:hidden"
-              onClick={() => setMobileOpen(false)} />
-            <motion.div initial={{ x:"100%" }} animate={{ x:0 }} exit={{ x:"100%" }} transition={{ type:"spring", damping:25, stiffness:200 }}
-              className="fixed top-0 right-0 bottom-0 z-50 w-72 bg-soil border-l border-bark lg:hidden overflow-y-auto">
-              <div className="flex items-center justify-between p-4 border-b border-bark/60">
-                <span className="font-display text-lg text-parchment">TERRA Menu</span>
-                <button onClick={() => setMobileOpen(false)} className="text-clay hover:text-parchment">
-                  <X className="w-5 h-5" />
-                </button>
+            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
+              onClick={() => setOpen(false)}/>
+            <motion.div initial={{x:"100%"}} animate={{x:0}} exit={{x:"100%"}} transition={{type:"spring",damping:25,stiffness:200}}
+              className="fixed top-0 right-0 bottom-0 z-50 w-72 bg-white shadow-float lg:hidden overflow-y-auto">
+              <div className="flex items-center justify-between p-4 border-b">
+                <span className="font-bold text-slate-800">Menu</span>
+                <button onClick={() => setOpen(false)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400"><X className="w-5 h-5"/></button>
               </div>
               <div className="p-4 space-y-1">
-                {navLinks.map(link => {
-                  const Icon = link.icon;
-                  const isActive = pathname === link.href;
-                  return (
-                    <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg font-data text-sm transition-all ${isActive ? "bg-moss/20 text-amber border border-moss/30" : "text-clay hover:text-parchment hover:bg-loam/60"}`}>
-                      <Icon className="w-4 h-4" />
-                      {link.label}
-                    </Link>
-                  );
-                })}
-                <div className="pt-4 border-t border-bark/60">
-                  <Link href="/dashboard" onClick={() => setMobileOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full py-3 bg-moss hover:bg-fern text-parchment rounded-lg font-display text-sm tracking-wider transition-all">
-                    LAUNCH APP <ChevronRight className="w-4 h-4" />
+                {NAV.map(n => { const Icon=n.icon; return (
+                  <Link key={n.href} href={n.href} onClick={() => setOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${pathname===n.href?"bg-brand-50 text-brand-700":"text-slate-600 hover:bg-slate-50"}`}>
+                    <Icon className="w-4 h-4"/> {n.label}
                   </Link>
+                );})}
+                <div className="pt-3 border-t">
+                  <Link href="/dashboard" onClick={() => setOpen(false)} className="btn btn-primary w-full justify-center">Open Farm Dashboard</Link>
                 </div>
               </div>
             </motion.div>
@@ -233,8 +212,7 @@ export default function Navigation() {
         )}
       </AnimatePresence>
 
-      {/* Click outside to close alerts */}
-      {showAlerts && <div className="fixed inset-0 z-40" onClick={() => setShowAlerts(false)} />}
+      {showNotifs && <div className="fixed inset-0 z-40" onClick={() => setShowNotifs(false)}/>}
     </>
   );
 }
