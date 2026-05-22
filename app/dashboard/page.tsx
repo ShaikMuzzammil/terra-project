@@ -26,7 +26,7 @@ const TEMP = [
 ];
 
 export default function Dashboard() {
-  const { plots, notifications, alerts: _alerts, irrigate, irrigateAll, toggleAutoIrr, farmName } = useStore();
+  const { plots, notifications, irrigate, irrigateAll, toggleAutoIrr, farmName } = useStore();
   const [sel, setSel] = useState<string|null>(null);
   const [irr, setIrr] = useState<string|null>(null);
   const [now, setNow] = useState(new Date());
